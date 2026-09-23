@@ -1,0 +1,10 @@
+{
+  "banco": "001",
+  "nomeDoBanco": "BCO DO BRASIL S.A.",
+  "agencia": "0001",
+  "conta": "123456",
+  "tipoDeConta": "Conta Corrente",
+  "nome": "Favorecido De Teste",
+  "email": "favorecido.teste@example.com",
+  "documento": "52998224725"
+}

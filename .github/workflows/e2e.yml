@@ -1,0 +1,132 @@
+name: E2E
+
+# Dois gatilhos, por um motivo de negócio e não de engenharia:
+#
+# - push/PR rodam só o que NÃO movimenta dinheiro. O caminho feliz do Pix
+#   transfere R$ 0,01 de verdade em homologação: rodá-lo a cada commit seria
+#   uma transferência por push, com o extrato da conta virando log de CI.
+# - as transferências rodam sob demanda (workflow_dispatch), com confirmação
+#   explícita de quem dispara.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      confirmar_transferencias:
+        description: 'Executar os cenários que MOVIMENTAM DINHEIRO (R$ 0,01 por cenário)'
+        type: boolean
+        default: false
+
+# A suíte inteira usa a mesma conta de homologação. Duas execuções ao mesmo
+# tempo disputariam a sessão e o saldo, então elas entram em fila em vez de
+# rodar em paralelo — e nada é cancelado no meio de uma transferência.
+concurrency:
+  group: e2e-homologacao
+  cancel-in-progress: false
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Sem binário do Cypress: este job só compila tipos, e baixar ~250 MB
+      # para isso atrasaria o feedback mais rápido do PR.
+      - name: Instalar dependências
+        run: npm ci
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+
+      - run: npm run typecheck
+
+  validacoes:
+    name: Validações (não movimenta dinheiro)
+    needs: typecheck
+    runs-on: ubuntu-latest
+    # PR vindo de fork não recebe secrets: o job falharia com erro confuso de
+    # credencial em vez de dizer o que realmente aconteceu.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # A action oficial cuida do npm ci e do cache do binário do Cypress.
+      - name: Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          command: npm run test:ci
+          browser: electron
+        env:
+          # Os nomes em minúsculo são intencionais: Cypress corta o prefixo
+          # CYPRESS_ e o que sobra vira a chave lida por Cypress.env(), que é
+          # sensível a maiúsculas. Os secrets do GitHub são MAIÚSCULOS, então
+          # o mapeamento acontece aqui.
+          CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
+          CYPRESS_conta: ${{ secrets.CYPRESS_CONTA }}
+          CYPRESS_senha: ${{ secrets.CYPRESS_SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CYPRESS_CHAVE_PIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CYPRESS_CODIGO_SMS }}
+
+      # Evidência de execução: relatório HTML com cada cenário e, nas falhas,
+      # o screenshot embutido. Sobe sempre, não só quando quebra — é o que
+      # comprova o que rodou.
+      - name: Relatório de execução
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-validacoes
+          path: cypress/reports
+          if-no-files-found: ignore
+          # ATENÇÃO: o relatório embute screenshots da tela logada — saldo,
+          # conta, chave Pix e nome do titular (que vai dentro do BR Code).
+          # Retenção curta para o artefato não virar vazamento por
+          # esquecimento. Em repositório público, avalie desligar.
+          retention-days: 1
+
+  transferencias:
+    name: Transferências (MOVIMENTA DINHEIRO)
+    needs: typecheck
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.confirmar_transferencias
+    # Environment protegido: configure "Required reviewers" nas settings do
+    # repositório e nenhuma transferência roda sem aprovação humana.
+    environment: homologacao-pix
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          command: npm run test:transferencias
+          browser: electron
+        env:
+          CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
+          CYPRESS_conta: ${{ secrets.CYPRESS_CONTA }}
+          CYPRESS_senha: ${{ secrets.CYPRESS_SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CYPRESS_CHAVE_PIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CYPRESS_CODIGO_SMS }}
+
+      - name: Relatório de execução
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-transferencias
+          path: cypress/reports
+          if-no-files-found: ignore
+          retention-days: 1
