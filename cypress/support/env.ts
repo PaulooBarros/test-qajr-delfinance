@@ -13,14 +13,27 @@ export const envObrigatoria = (nome: string): string => {
   const valor = Cypress.env(nome);
 
   if (valor === undefined || valor === null || String(valor).trim() === '') {
-    // A mensagem cobre os dois ambientes de propósito: no CI não existe
-    // arquivo para copiar, e quem lê o log do GitHub Actions precisa saber
-    // que o caminho de lá é outro.
+    // Listar as chaves que o Cypress enxergou — só os nomes, nunca os
+    // valores — separa dois problemas que hoje dão a mesma mensagem:
+    //
+    // - lista vazia: o cypress.env.json não está sendo lido. Arquivo em
+    //   outra pasta, nome errado (cypress.env.json.txt é clássico no Windows
+    //   com extensões ocultas) ou comando rodado fora da raiz do projeto;
+    // - lista com outras chaves: o arquivo foi lido e o nome da variável é
+    //   que está diferente.
+    const todas = Cypress.env() as Record<string, unknown>;
+    const comValor = Object.keys(todas).filter((chave) => String(todas[chave] ?? '').trim());
+    const encontradas = comValor.length
+      ? comValor.join(', ')
+      : '(nenhuma — o cypress.env.json não foi lido)';
+
     throw new Error(
       [
         `Variável de ambiente "${nome}" não encontrada.`,
-        '  - Local: copie cypress.env.example.json para cypress.env.json e preencha.',
-        `  - CI: configure o secret e mapeie para CYPRESS_${nome} em .github/workflows/e2e.yml`,
+        `  - Chaves que o Cypress enxergou: ${encontradas}`,
+        '  - Local: cypress.env.json precisa estar na raiz do projeto, ao lado',
+        '    de cypress.config.ts, e o comando precisa rodar dessa mesma pasta.',
+        `  - CI: configure o secret e mapeie para CYPRESS_${nome} no workflow.`,
       ].join('\n'),
     );
   }

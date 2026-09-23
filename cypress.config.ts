@@ -41,14 +41,12 @@ export default defineConfig({
       runMode: 2,
       openMode: 0,
     },
-    env: {
-      // Credenciais reais ficam em cypress.env.json (fora do Git).
-      documento: '',
-      conta: '',
-      senha: '',
-      chavePix: '',
-      codigoSMS: '',
-    },
+    // Sem bloco `env` com strings vazias de propósito. Declarar
+    // `documento: ''` aqui faz Cypress.env() sempre devolver a chave, só que
+    // vazia — o que impede distinguir "cypress.env.json não foi lido" de
+    // "a chave está com outro nome", que é exatamente o diagnóstico que
+    // alguém precisa na primeira execução. As variáveis esperadas estão
+    // documentadas em cypress.env.example.json e no README.
     setupNodeEvents(on, config) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('cypress-mochawesome-reporter/plugin')(on);
