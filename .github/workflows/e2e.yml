@@ -61,6 +61,30 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Falha em segundos, com instrução, em vez de deixar 7 specs quebrarem
+      # com "variável não encontrada" e encherem o artefato de screenshots de
+      # falha que não têm nada a ver com o produto.
+      - name: Conferir secrets
+        env:
+          CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
+          CYPRESS_conta: ${{ secrets.CONTA }}
+          CYPRESS_senha: ${{ secrets.SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CHAVEPIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CODIGOSMS }}
+        run: |
+          faltando=""
+          for nome in CYPRESS_documento CYPRESS_conta CYPRESS_senha CYPRESS_chavePix CYPRESS_codigoSMS; do
+            if [ -z "${!nome}" ]; then faltando="$faltando $nome"; fi
+          done
+          if [ -n "$faltando" ]; then
+            echo "::error::Secrets ausentes ou vazios:$faltando"
+            echo "Configure em Settings > Secrets and variables > Actions:"
+            echo "  CYPRESS_DOCUMENTO, CYPRESS_CONTA, CYPRESS_SENHA, CYPRESS_CHAVE_PIX, CYPRESS_CODIGO_SMS"
+            echo "O workflow mapeia cada um para a versao em minusculas que o Cypress.env() le."
+            exit 1
+          fi
+          echo "Todos os secrets necessarios estao presentes."
+
       # A action oficial cuida do npm ci e do cache do binário do Cypress.
       - name: Cypress
         uses: cypress-io/github-action@v6
@@ -68,15 +92,15 @@ jobs:
           command: npm run test:ci
           browser: electron
         env:
-          # Os nomes em minúsculo são intencionais: Cypress corta o prefixo
-          # CYPRESS_ e o que sobra vira a chave lida por Cypress.env(), que é
-          # sensível a maiúsculas. Os secrets do GitHub são MAIÚSCULOS, então
-          # o mapeamento acontece aqui.
+          # O lado esquerdo em minúsculas é obrigatório: o Cypress corta o
+          # prefixo CYPRESS_ e o que sobra vira a chave de Cypress.env(), que
+          # é sensível a maiúsculas. O lado direito é só o nome do secret no
+          # GitHub — a tradução entre os dois acontece aqui.
           CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
-          CYPRESS_conta: ${{ secrets.CYPRESS_CONTA }}
-          CYPRESS_senha: ${{ secrets.CYPRESS_SENHA }}
-          CYPRESS_chavePix: ${{ secrets.CYPRESS_CHAVE_PIX }}
-          CYPRESS_codigoSMS: ${{ secrets.CYPRESS_CODIGO_SMS }}
+          CYPRESS_conta: ${{ secrets.CONTA }}
+          CYPRESS_senha: ${{ secrets.SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CHAVEPIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CODIGOSMS }}
 
       # Evidência de execução: relatório HTML com cada cenário e, nas falhas,
       # o screenshot embutido. Sobe sempre, não só quando quebra — é o que
@@ -99,8 +123,10 @@ jobs:
     needs: typecheck
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && inputs.confirmar_transferencias
-    # Environment protegido: configure "Required reviewers" nas settings do
-    # repositório e nenhuma transferência roda sem aprovação humana.
+    # O portão real hoje é o workflow_dispatch com o checkbox de confirmação.
+    # Este environment existe para receber "Required reviewers" em
+    # Settings > Environments: enquanto ninguém configurar a regra, o GitHub
+    # o cria sozinho, sem proteção, e ele não bloqueia nada.
     environment: homologacao-pix
     steps:
       - uses: actions/checkout@v4
@@ -110,6 +136,30 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Falha em segundos, com instrução, em vez de deixar 7 specs quebrarem
+      # com "variável não encontrada" e encherem o artefato de screenshots de
+      # falha que não têm nada a ver com o produto.
+      - name: Conferir secrets
+        env:
+          CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
+          CYPRESS_conta: ${{ secrets.CONTA }}
+          CYPRESS_senha: ${{ secrets.SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CHAVEPIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CODIGOSMS }}
+        run: |
+          faltando=""
+          for nome in CYPRESS_documento CYPRESS_conta CYPRESS_senha CYPRESS_chavePix CYPRESS_codigoSMS; do
+            if [ -z "${!nome}" ]; then faltando="$faltando $nome"; fi
+          done
+          if [ -n "$faltando" ]; then
+            echo "::error::Secrets ausentes ou vazios:$faltando"
+            echo "Configure em Settings > Secrets and variables > Actions:"
+            echo "  CYPRESS_DOCUMENTO, CYPRESS_CONTA, CYPRESS_SENHA, CYPRESS_CHAVE_PIX, CYPRESS_CODIGO_SMS"
+            echo "O workflow mapeia cada um para a versao em minusculas que o Cypress.env() le."
+            exit 1
+          fi
+          echo "Todos os secrets necessarios estao presentes."
+
       - name: Cypress
         uses: cypress-io/github-action@v6
         with:
@@ -117,10 +167,10 @@ jobs:
           browser: electron
         env:
           CYPRESS_documento: ${{ secrets.CYPRESS_DOCUMENTO }}
-          CYPRESS_conta: ${{ secrets.CYPRESS_CONTA }}
-          CYPRESS_senha: ${{ secrets.CYPRESS_SENHA }}
-          CYPRESS_chavePix: ${{ secrets.CYPRESS_CHAVE_PIX }}
-          CYPRESS_codigoSMS: ${{ secrets.CYPRESS_CODIGO_SMS }}
+          CYPRESS_conta: ${{ secrets.CONTA }}
+          CYPRESS_senha: ${{ secrets.SENHA }}
+          CYPRESS_chavePix: ${{ secrets.CHAVEPIX }}
+          CYPRESS_codigoSMS: ${{ secrets.CODIGOSMS }}
 
       - name: Relatório de execução
         if: always()

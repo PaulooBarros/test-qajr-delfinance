@@ -664,23 +664,28 @@ homologacao-pix** para exigir aprovação humana antes de cada execução.
 
 Em **Settings → Secrets and variables → Actions**, crie:
 
-| secret | conteúdo |
-|---|---|
-| `CYPRESS_DOCUMENTO` | CPF/CNPJ do login |
-| `CYPRESS_CONTA` | número da conta |
-| `CYPRESS_SENHA` | senha de homologação |
-| `CYPRESS_CHAVE_PIX` | chave do favorecido de teste |
-| `CYPRESS_CODIGO_SMS` | código fixo de homologação |
+| secret | conteúdo | vira, no job |
+|---|---|---|
+| `CYPRESS_DOCUMENTO` | CPF/CNPJ do login | `CYPRESS_documento` |
+| `CONTA` | número da conta | `CYPRESS_conta` |
+| `SENHA` | senha de homologação | `CYPRESS_senha` |
+| `CHAVEPIX` | chave do favorecido de teste | `CYPRESS_chavePix` |
+| `CODIGOSMS` | código fixo de homologação | `CYPRESS_codigoSMS` |
 
-O workflow mapeia cada um para uma variável **em minúsculas**
-(`CYPRESS_documento`, `CYPRESS_chavePix`, ...). Não é descuido: o Cypress corta
-o prefixo `CYPRESS_` e usa o que sobra como chave de `Cypress.env()`, que é
-sensível a maiúsculas. Os secrets do GitHub são maiúsculos, então a tradução
-acontece no `env:` do job.
+A coluna da direita é a que importa e **precisa ser exatamente essa**: o
+Cypress corta o prefixo `CYPRESS_` e usa o que sobra como chave de
+`Cypress.env()`, que é sensível a maiúsculas. O nome do secret no GitHub é
+livre — a tradução entre os dois acontece no `env:` do job.
+
+Sem esses secrets **o job falha no primeiro passo**, de propósito: há um
+`Conferir secrets` antes do Cypress que lista os que faltam e encerra em
+segundos. Sem ele, as 7 specs rodariam, quebrariam com "variável não
+encontrada" e encheriam o relatório de screenshots de falha que não têm nada
+a ver com o produto — ruído que esconde problema real.
 
 Verificado localmente na condição exata do runner — `cypress.env.json` ausente,
 credenciais só em `CYPRESS_*`: a suíte passa. E, se faltar um secret,
-`envObrigatoria()` falha com o nome da variável e o que fazer nos dois
+`envObrigatoria()` também falha com o nome da variável e o que fazer nos dois
 ambientes, em vez de estourar num seletor qualquer três comandos adiante.
 
 ### Detalhes que evitam dor de cabeça

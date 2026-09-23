@@ -1,4 +1,4 @@
-/** Remove tudo que não for dígito: "300.300.300-30" -> "30030030030" */
+/** Remove tudo que não for dígito: "123.456.789-09" -> "12345678909" */
 export const apenasDigitos = (valor: string): string => valor.replace(/\D/g, '');
 
 /** Date -> "30/09/2026", formato exibido no campo de data da transferência. */
