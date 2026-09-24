@@ -1,2 +1,2 @@
-import './validators';
 import './confirmacao.commands';
+import './calendario.commands';

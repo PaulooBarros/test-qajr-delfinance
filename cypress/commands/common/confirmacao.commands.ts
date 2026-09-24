@@ -3,10 +3,7 @@ import { comumElements } from '@elements/comum.elements';
 declare global {
   namespace Cypress {
     interface Chainable {
-      /**
-       * Digita o código de 6 dígitos no modal de PIN, seja ele do Pix
-       * ("Confirmar Pagamento") ou do TED ("Confirmar Transferência").
-       */
+      /** PIN de 6 dígitos, no modal do Pix ou do TED. */
       digitarCodigoSms(codigo: string): Chainable<void>;
     }
   }
@@ -15,8 +12,7 @@ declare global {
 Cypress.Commands.add('digitarCodigoSms', (codigo: string) => {
   const digitos = String(codigo).split('');
 
-  // Escopo no modal do topo, não pelo título: o componente é o mesmo nas duas
-  // features, e a etapa anterior segue no DOM com campos próprios.
+  // Escopo no modal do topo: a etapa anterior segue no DOM.
   cy.get(`${comumElements.modal}:visible`)
     .last()
     .within(() => {

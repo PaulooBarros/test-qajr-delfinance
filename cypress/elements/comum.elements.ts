@@ -1,20 +1,16 @@
-/**
- * Seletores compartilhados entre features.
- *
- * O modal de PIN é o caso claro: Pix e TED usam o mesmo componente, com
- * títulos diferentes ("Confirmar Pagamento" e "Confirmar Transferência").
- * Duplicar o seletor em cada feature criaria dois pontos de manutenção para
- * um componente só.
- */
+/** Componentes compartilhados entre Pix, TED e extrato. */
 export const comumElements = {
-  /** Qualquer modal. O Vuetify empilha overlays e mantém a etapa anterior. */
+  /** O Vuetify empilha modais e mantém a etapa anterior no DOM. */
   modal: '[role="dialog"]',
 
-  /**
-   * Campos do PIN de 6 dígitos. O seletor é o autocomplete padrão de código
-   * de uso único — atributo de HTML, mais estável que classe interna.
-   */
   campoCodigo: 'input[autocomplete="one-time-code"]',
+
+  /** Dias do mês exibido, sem os dias do mês vizinho que a grade mostra nas bordas. */
+  botaoCalendarioDia:
+    '.v-date-picker-month__day:not(.v-date-picker-month__day--adjacent) .v-date-picker-month__day-btn',
+  /** Durante a animação de troca de mês, são duas. */
+  gradeCalendario: '.v-date-picker-month__days',
+  botaoCalendarioProximoMes: '[data-testid="next-month"]',
 } as const;
 
 export default comumElements;

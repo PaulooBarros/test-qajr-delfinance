@@ -1,72 +1,50 @@
 import { pixElements } from '@elements/pix.elements';
-import { envObrigatoria } from '@support/env';
-import { paraDataBR } from '@utils';
 
-
+// retries: 0 porque o teste movimenta dinheiro: um retry após o PIN envia de novo.
 describe('Pix', { retries: 0 }, () => {
   const VALOR_EM_CENTAVOS = '1';
   const DESCRICAO = 'Teste automatizado Cypress';
 
-  /**
-   * Data fixa em 30/09.
-   */
-  const DATA_AGENDAMENTO = new Date(2026, 8, 30);
-
   beforeEach(() => {
-    cy.login(envObrigatoria('documento'), envObrigatoria('conta'), envObrigatoria('senha'));
+    cy.login(Cypress.env('documento'), Cypress.env('conta'), Cypress.env('senha'));
     cy.visitPix();
   });
 
   it('transfere R$ 0,01 para a chave cadastrada', () => {
-    cy.preencherTransferenciaPix(envObrigatoria('chavePix'), VALOR_EM_CENTAVOS, DESCRICAO);
+    cy.preencherTransferenciaPix(Cypress.env('chavePix'), VALOR_EM_CENTAVOS, DESCRICAO);
 
-    // Transferência imediata é a data de hoje já preenchida: asserta o padrão
-    // em vez de confiar nele.
-    cy.get(pixElements.campoData).should('have.value', paraDataBR(new Date()));
+    cy.get(pixElements.campoData).should('have.value', new Date().toLocaleDateString('pt-BR'));
     cy.confirmar();
 
     cy.contains(pixElements.tituloConfirmarPagamento).should('be.visible');
-    cy.digitarCodigoSms(envObrigatoria('codigoSMS'));
 
-    // Sem cy.confirmar() aqui de propósito: o componente de PIN envia sozinho
-    // ao receber o 6º dígito. Clicar no "Confirmar" depois disso é corrida
-    // perdida — o modal já está desmontando e o clique falha com "the page
-    // updated while this command was executing".
+    // O PIN envia sozinho no 6º dígito; clicar em "Confirmar" depois disso falha.
+    cy.digitarCodigoSms(Cypress.env('codigoSMS'));
     cy.aguardarPixConcluido();
 
-    // Comprovante disponível é parte do resultado esperado da transferência:
-    // sem ele o usuário não tem prova do pagamento.
     cy.contains('button', pixElements.botaoComprovante, { timeout: 30000 })
       .should('be.visible')
-      .and('be.enabled');
-
-    cy.contains('button', pixElements.botaoComprovante)
+      .and('be.enabled')
       .find(pixElements.iconeDownload)
       .should('exist');
-
-    // TODO: clicar e validar o arquivo em cypress/downloads. Depende de saber
-    // se o clique baixa direto ou abre outra aba — Cypress não segue aba nova.
   });
 
-  it('agenda R$ 0,01 para 30/09', () => {
-    cy.preencherTransferenciaPix(envObrigatoria('chavePix'), VALOR_EM_CENTAVOS, DESCRICAO);
+  it('agenda R$ 0,01 para uma data futura', () => {
+    cy.preencherTransferenciaPix(Cypress.env('chavePix'), VALOR_EM_CENTAVOS, DESCRICAO);
 
-    // O agendamento só difere do imediato aqui: trocar a data antes de
-    // confirmar. O resto do fluxo é o mesmo.
-    cy.get(pixElements.campoData).should('have.value', paraDataBR(new Date()));
-    cy.agendarPixPara(DATA_AGENDAMENTO);
+    cy.get(pixElements.campoData).should('be.visible').click();
+    cy.escolherDataFuturaNoCalendario(pixElements.campoData).then((dataAgendada) => {
+      cy.confirmar();
 
-    cy.confirmar();
+      cy.contains(pixElements.tituloConfirmarPagamento).should('be.visible');
+      cy.digitarCodigoSms(Cypress.env('codigoSMS'));
 
-    cy.contains(pixElements.tituloConfirmarPagamento).should('be.visible');
-    cy.digitarCodigoSms(envObrigatoria('codigoSMS'));
+      // O toast diz "efetuada" também no agendamento, então não distingue os dois.
+      cy.aguardarPixConcluido();
 
-    // Mesmo toast do imediato: o produto diz "efetuada" mesmo para agendamento.
-    // Quem prova que agendou é a asserção da data, acima, antes do confirm.
-    cy.aguardarPixConcluido();
+      cy.log(`agendado para ${dataAgendada}`);
+    });
 
-    // TODO: validar o agendamento fora do fluxo — na listagem de
-    // transferências agendadas ou no comprovante, onde a data deve aparecer
-    // como 30/09 e não como hoje.
+
   });
 });

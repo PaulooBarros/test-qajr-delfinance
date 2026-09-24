@@ -11,7 +11,7 @@
     "test:home": "cypress run --spec \"cypress/e2e/home/**/*.cy.ts\"",
     "test:pix": "cypress run --spec \"cypress/e2e/pix/**/*.cy.ts\"",
     "typecheck": "tsc --noEmit",
-    "test:ci": "cypress run --spec \"cypress/e2e/login/**/*.cy.ts,cypress/e2e/auth/**/*.cy.ts,cypress/e2e/home/**/*.cy.ts,cypress/e2e/extrato/**/*.cy.ts,cypress/e2e/ted/ted-validacoes.cy.ts,cypress/e2e/pix/pix-validacoes.cy.ts,cypress/e2e/pix/pix-cobranca.cy.ts\"",
+    "test:ci": "cypress run --spec \"cypress/e2e/login/**/*.cy.ts,cypress/e2e/auth/**/*.cy.ts,cypress/e2e/home/**/*.cy.ts,cypress/e2e/extrato/**/*.cy.ts,cypress/e2e/pix/pix-cobranca.cy.ts,cypress/e2e/pix/pix-validacoes.cy.ts\"",
     "test:transferencias": "cypress run --spec \"cypress/e2e/pix/pix.cy.ts,cypress/e2e/ted/ted.cy.ts\"",
     "test:extrato": "cypress run --spec \"cypress/e2e/extrato/**/*.cy.ts\"",
     "test:ted": "cypress run --spec \"cypress/e2e/ted/**/*.cy.ts\""

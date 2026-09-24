@@ -1,11 +1,6 @@
 import { defineConfig } from 'cypress';
 
 export default defineConfig({
-  /**
-   * Relatório HTML com o resultado de cada cenário e o screenshot da falha
-   * embutido — é a evidência de execução que sobra depois que o terminal
-   * fecha, e o que o CI publica como artefato.
-   */
   reporter: 'cypress-mochawesome-reporter',
   reporterOptions: {
     reportDir: 'cypress/reports',
@@ -13,8 +8,7 @@ export default defineConfig({
     reportPageTitle: 'DelFinance — E2E',
     embeddedScreenshots: true,
     inlineAssets: true,
-    // O relatório carrega screenshots da área logada: saldo, chave Pix e nome
-    // do titular. Tratar como dado sensível, igual aos prints soltos.
+    // O relatório embute screenshots da área logada (saldo, chave, titular): tratar como sensível.
     overwrite: true,
     html: true,
     json: false,
@@ -32,7 +26,6 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     viewportWidth: 1366,
     viewportHeight: 768,
-    // Ambiente remoto costuma responder mais devagar que localhost.
     defaultCommandTimeout: 15000,
     pageLoadTimeout: 60000,
     requestTimeout: 20000,
@@ -41,22 +34,9 @@ export default defineConfig({
       runMode: 2,
       openMode: 0,
     },
-    // Sem bloco `env` com strings vazias de propósito. Declarar
-    // `documento: ''` aqui faz Cypress.env() sempre devolver a chave, só que
-    // vazia — o que impede distinguir "cypress.env.json não foi lido" de
-    // "a chave está com outro nome", que é exatamente o diagnóstico que
-    // alguém precisa na primeira execução. As variáveis esperadas estão
-    // documentadas em cypress.env.example.json e no README.
     setupNodeEvents(on, config) {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('cypress-mochawesome-reporter/plugin')(on);
-
-      on('task', {
-        log(message: string) {
-          console.log(message);
-          return null;
-        },
-      });
 
       return config;
     },

@@ -16,8 +16,6 @@
     "paths": {
       "@commands/*": ["cypress/commands/*"],
       "@elements/*": ["cypress/elements/*"],
-      "@utils": ["cypress/utils"],
-      "@utils/*": ["cypress/utils/*"],
       "@support/*": ["cypress/support/*"],
       "@fixtures/*": ["cypress/fixtures/*"]
     }

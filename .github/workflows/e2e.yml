@@ -61,7 +61,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Falha em segundos, com instrução, em vez de deixar 7 specs quebrarem
+      # Falha em segundos, com instrução, em vez de deixar as specs quebrarem
       # com "variável não encontrada" e encherem o artefato de screenshots de
       # falha que não têm nada a ver com o produto.
       - name: Conferir secrets
@@ -112,11 +112,9 @@ jobs:
           name: relatorio-validacoes
           path: cypress/reports
           if-no-files-found: ignore
-          # ATENÇÃO: o relatório embute screenshots da tela logada — saldo,
-          # conta, chave Pix e nome do titular (que vai dentro do BR Code).
-          # Retenção curta para o artefato não virar vazamento por
-          # esquecimento. Em repositório público, avalie desligar.
-          retention-days: 1
+          # Retenção de 30 dias para a evidência continuar disponível durante a avaliação.
+          # O relatório embute screenshots da tela logada da conta de homologação.
+          retention-days: 30
 
   transferencias:
     name: Transferências (MOVIMENTA DINHEIRO)
@@ -136,7 +134,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Falha em segundos, com instrução, em vez de deixar 7 specs quebrarem
+      # Falha em segundos, com instrução, em vez de deixar as specs quebrarem
       # com "variável não encontrada" e encherem o artefato de screenshots de
       # falha que não têm nada a ver com o produto.
       - name: Conferir secrets
@@ -179,4 +177,4 @@ jobs:
           name: relatorio-transferencias
           path: cypress/reports
           if-no-files-found: ignore
-          retention-days: 1
+          retention-days: 30

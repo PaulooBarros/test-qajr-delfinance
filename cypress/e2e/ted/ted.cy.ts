@@ -1,31 +1,18 @@
 import { agendamentosElements } from '@elements/agendamentos.elements';
+import { comumElements } from '@elements/comum.elements';
+import { menuElements } from '@elements/menu.elements';
 import { tedElements } from '@elements/ted.elements';
-import { envObrigatoria } from '@support/env';
 import type { FavorecidoTed } from '../../commands/ted/ted.commands';
-import { centavosParaValorBR, paraDataBR } from '@utils';
 
-/**
- * Caminho feliz do TED.
- *
- * retries: 0 pelo mesmo motivo do Pix — este teste movimenta dinheiro, e um
- * retry após o PIN confirmado enviaria a transferência de novo.
- *
- * O favorecido é fictício, com CPF de dígitos verificadores válidos, e a
- * execução com dados fake foi autorizada por quem administra o ambiente de
- * homologação — ver "Dificuldades encontradas" no README. Por ser dado
- * sintético, ele vive em `fixtures/` e vai para o Git, ao contrário das
- * credenciais, que ficam em `cypress.env.json`.
- */
+interface Agendamento {
+  amount: number;
+  notes: string;
+  effectiveAt: string;
+}
+
 describe('TED', { retries: 0 }, () => {
   const VALOR_EM_CENTAVOS = '1';
   const DESCRICAO = 'Teste automatizado Cypress';
-
-  /**
-   * Mesma data do agendamento de Pix, de propósito: os dois cenários ficam
-   * comparáveis. Vale a mesma ressalva — data fixa envelhece, e a partir de
-   * 01/10/2026 o calendário não a oferece mais.
-   */
-  const DATA_AGENDAMENTO = new Date(2026, 8, 30);
 
   let favorecido: FavorecidoTed;
 
@@ -34,68 +21,70 @@ describe('TED', { retries: 0 }, () => {
       favorecido = dados;
     });
 
-    cy.login(envObrigatoria('documento'), envObrigatoria('conta'), envObrigatoria('senha'));
-    cy.visitTed();
+    cy.login(Cypress.env('documento'), Cypress.env('conta'), Cypress.env('senha'));
+    cy.visit('/transferencias/ted');
+    cy.get(tedElements.botaoConcluir).should('be.visible');
   });
 
   it('transfere R$ 0,01 para o favorecido de teste', () => {
     cy.preencherTed(favorecido, VALOR_EM_CENTAVOS, DESCRICAO);
 
-    // Conferir antes de enviar: valor e data são os dois campos onde um erro
-    // de máscara passaria despercebido até o dinheiro sair errado.
-    cy.campoTed(tedElements.campos.valor)
-      .invoke('val')
-      .should('contain', centavosParaValorBR(VALOR_EM_CENTAVOS));
-    cy.campoTed(tedElements.campos.data).should('have.value', paraDataBR(new Date()));
+    // Digitar a data não funciona: o campo apaga as barras (defeito no README).
+    // Hoje é o primeiro dia habilitado, já que o produto desabilita o passado.
+    cy.get(tedElements.campos.data).find('.v-field').click();
+    cy.get(`${comumElements.botaoCalendarioDia}:not([disabled])`).first().click();
 
-    // O botão só habilita com o formulário inteiro válido — é a validação do
-    // produto confirmando que nada ficou para trás.
+    cy.campoTed(tedElements.campos.valor).invoke('val').should('contain', '0,01');
+    cy.campoTed(tedElements.campos.data).should('have.value', new Date().toLocaleDateString('pt-BR'));
+
     cy.get(tedElements.botaoConcluir).should('be.enabled').click();
 
     cy.contains(tedElements.tituloConfirmacao).should('be.visible');
-    cy.digitarCodigoSms(envObrigatoria('codigoSMS'));
+    cy.digitarCodigoSms(Cypress.env('codigoSMS'));
 
-    // Sem clique no "Confirmar": o componente de PIN envia sozinho ao receber
-    // o 6º dígito, igual ao do Pix.
-    //
-    // O TED não emite toast. O sinal de sucesso é o comprovante abrir, e é
-    // por isso que a espera é por ele e não por mensagem.
+    // O TED não emite toast: o sinal de sucesso é o comprovante abrir.
     cy.contains(tedElements.tituloComprovante, { timeout: 60000 }).should('be.visible');
 
     cy.contains('button', tedElements.botaoExportarComprovante).should('be.visible').and('be.enabled');
   });
 
-  it('agenda R$ 0,01 para 30/09 e registra em Agendamentos', () => {
-    // Marcador único por execução: a conta acumula agendamentos de rodadas
-    // anteriores, e sem isso o teste encontraria o registro de ontem e passaria
-    // mesmo que este agendamento tivesse falhado.
+  it('agenda R$ 0,01 para o mês seguinte e registra em Agendamentos', () => {
+    // Marcador único: a conta acumula agendamentos de execuções anteriores.
     const marcador = `Cypress agendamento ${Date.now()}`;
 
-    cy.preencherTed(favorecido, VALOR_EM_CENTAVOS, marcador, DATA_AGENDAMENTO);
+    cy.preencherTed(favorecido, VALOR_EM_CENTAVOS, marcador);
 
-    cy.campoTed(tedElements.campos.data).should('have.value', paraDataBR(DATA_AGENDAMENTO));
+    cy.get(tedElements.campos.data).find('.v-field').click();
+    cy.escolherDataFuturaNoCalendario(`${tedElements.campos.data} input`).then((dataAgendada) => {
+      cy.get(tedElements.botaoConcluir).should('be.enabled').click();
 
-    cy.get(tedElements.botaoConcluir).should('be.enabled').click();
+      cy.contains(tedElements.tituloConfirmacao).should('be.visible');
+      cy.digitarCodigoSms(Cypress.env('codigoSMS'));
+      cy.contains(tedElements.tituloComprovante, { timeout: 60000 }).should('be.visible');
 
-    cy.contains(tedElements.tituloConfirmacao).should('be.visible');
-    cy.digitarCodigoSms(envObrigatoria('codigoSMS'));
+      // Verificação fora do fluxo: o comprovante só prova que a tela aceitou.
+      // A tabela não exibe a descrição, então o agendamento é achado pela API.
+      cy.intercept('GET', '**/transactions?status=scheduled*').as('agendados');
 
-    cy.contains(tedElements.tituloComprovante, { timeout: 60000 }).should('be.visible');
+      // force: o menu pode estar coberto pelo modal que ainda está fechando.
+      cy.get(menuElements.itemAgendamentos).click({ force: true });
 
-    // Verificação fora do fluxo: o comprovante prova que a tela aceitou, não
-    // que o agendamento existe. Quem prova isso é a listagem, em outra tela,
-    // servida por outro endpoint.
-    cy.visitAgendamentos().then((agendamentos) => {
-      const criado = agendamentos.find((a) => a.notes === marcador);
+      cy.wait('@agendados').then(({ response }) => {
+        expect(response?.statusCode, 'status da listagem').to.eq(200);
 
-      expect(criado, `agendamento "${marcador}" na listagem`).to.not.be.undefined;
-      expect(criado?.amount, 'valor agendado').to.eq(0.01);
-      expect(criado?.effectiveAt, 'data de efetivação').to.contain('2026-09-30');
+        const criado = (response?.body as Agendamento[]).find((a) => a.notes === marcador);
+
+        expect(criado, `agendamento "${marcador}" na listagem`).to.not.be.undefined;
+        expect(criado?.amount, 'valor agendado').to.eq(0.01);
+        expect(
+          new Date(String(criado?.effectiveAt)).toLocaleDateString('pt-BR'),
+          'data de efetivação',
+        ).to.eq(dataAgendada);
+      });
+
+      cy.contains(agendamentosElements.linhasDaTabela, dataAgendada)
+        .should('be.visible')
+        .and('contain.text', agendamentosElements.textoStatusAgendado);
     });
-
-    // E o usuário precisa ver isso na tela, não só a API devolver.
-    cy.contains(agendamentosElements.linhas, paraDataBR(DATA_AGENDAMENTO))
-      .should('be.visible')
-      .and('contain.text', agendamentosElements.statusAgendado);
   });
 });

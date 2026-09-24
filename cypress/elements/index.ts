@@ -1,9 +1,0 @@
-export { comumElements } from './comum.elements';
-export { loginElements } from './login.elements';
-export { homeElements } from './home.elements';
-export { pixElements } from './pix.elements';
-export { menuElements } from './menu.elements';
-export { extratoElements } from './extrato.elements';
-export { tedElements } from './ted.elements';
-export { agendamentosElements } from './agendamentos.elements';
-export { cobrancaElements } from './cobranca.elements';
