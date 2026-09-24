@@ -15,15 +15,16 @@ Cypress.Commands.add('login', (documento: string, conta: string, senha: string) 
 
   cy.get(loginElements.abaLoginDocumento).should('be.visible').click();
 
-  // Os campos têm máscara: só dígitos, para não duplicar a pontuação.
+  // String(): no CI as credenciais vêm de CYPRESS_*, e o Cypress converte
+  // valores só com dígitos em number. Os campos têm máscara: só dígitos.
   cy.get(loginElements.campoLoginCPFCNPJ)
     .should('be.visible')
     .clear()
-    .type(documento.replace(/\D/g, ''));
+    .type(String(documento).replace(/\D/g, ''));
 
-  cy.get(loginElements.campoNumeroConta).clear().type(conta.replace(/\D/g, ''));
+  cy.get(loginElements.campoNumeroConta).clear().type(String(conta).replace(/\D/g, ''));
 
-  cy.get(loginElements.campoSenha).clear().type(senha, { log: false });
+  cy.get(loginElements.campoSenha).clear().type(String(senha), { log: false });
 
   cy.get(loginElements.botaoEntrar).should('be.enabled').click();
 

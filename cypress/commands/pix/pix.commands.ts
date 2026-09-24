@@ -33,6 +33,8 @@ Cypress.Commands.add(
   (chave: string, centavos: string, descricao: string) => {
     cy.contains(pixElements.cardTransferir).should('be.visible').click();
 
+    // String(): chave de telefone ou CPF vem como number do CYPRESS_chavePix no CI.
+    chave = String(chave);
     cy.preencherChavePix(chave);
     cy.continuar();
 
@@ -59,9 +61,9 @@ Cypress.Commands.add('preencherChavePix', (chave: string) => {
     .find('input')
     .should('be.visible')
     .clear()
-    .invoke('val', chave)
+    .invoke('val', String(chave))
     .trigger('input')
-    .should('have.value', chave);
+    .should('have.value', String(chave));
 });
 
 /**
