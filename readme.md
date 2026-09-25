@@ -93,15 +93,15 @@ publica esse relatório como artefato (`relatorio-validacoes` ou `relatorio-tran
 
 ## 6. Defeitos encontrados
 
-| # | defeito | severidade |
+| # | defeito 
 |---|---|---|
-| D1 | **Campos de data (extrato e TED) apagam as barras digitadas**; no extrato, "Filtrar" volta ao período antigo sem avisar | alta |
-| D2 | **Campo de chave Pix aplica máscara de CPF** e corrompe chave aleatória (`1234abcd…` → `123.4abcd…`) | alta |
-| D3 | **Login inválido mostra só "Unauthorized"**, em inglês e sem dizer o que está errado | média |
-| D4 | **TED para hoje é reagendada para amanhã sem aviso** (provável horário de corte, ~17h) | média |
-| D5 | **Toast de Pix agendado diz "efetuada"**, igual ao imediato | média |
-| D6 | Formulário de TED mostra "Campo obrigatório" em 5 campos logo após o sucesso | baixa |
-| D7 | Texto de carregamento do extrato em inglês (`Loading items...`) | baixa |
+| D1 | **Campos de data (extrato e TED) apagam as barras digitadas**; no extrato, "Filtrar" volta ao período antigo sem avisar |
+| D2 | **Campo de chave Pix aplica máscara de CPF** e corrompe chave aleatória (`1234abcd…` → `123.4abcd…`) | 
+| D3 | **Login inválido mostra só "Unauthorized"**, em inglês e sem dizer o que está errado | 
+| D4 | **TED para hoje é reagendada para amanhã sem aviso** (provável horário de corte, ~17h) | 
+| D5 | **Toast de Pix agendado diz "efetuada"**, igual ao imediato | 
+| D6 | Formulário de TED mostra "Campo obrigatório" em 5 campos logo após o sucesso | 
+| D7 | Texto de carregamento do extrato em inglês (`Loading items...`) | 
 
 **Nos testes:** D1 e D2 têm contorno (data pelo calendário; chave preenchida com
 `invoke('val') + trigger('input')` em vez de `.type()`). D3 fica registrado num `it.skip` em
@@ -155,5 +155,4 @@ Secrets: `CYPRESS_DOCUMENTO`, `CONTA`, `SENHA`, `CHAVEPIX`, `CODIGOSMS`, mapeado
   combinado antes, para não bloquear a conta de homologação).
 - `cy.intercept()` nas confirmações de Pix e TED.
 - Validar o Pix fora do fluxo, como já é feito no TED: o executado no extrato e o agendado em Agendamentos.
-- Baixar e validar o comprovante.
 - Trocar `uncaught:exception → false` por um filtro de erros conhecidos.
