@@ -1,4 +1,5 @@
 import { extratoElements } from '@elements/extrato.elements';
+import menuElements from '@elements/menu.elements';
 
 const ROTA_EXTRATO = '**/transactions/bank-statement**';
 
@@ -25,7 +26,8 @@ Cypress.Commands.add('interceptarExtrato', () => {
 
 Cypress.Commands.add('visitExtrato', () => {
   cy.interceptarExtrato();
-  cy.visit('/contas/extrato');
+  cy.get(menuElements.itemExtrato).click();
+  //cy.visit('/contas/extrato');
 
   cy.aguardarExtratoCarregar();
 });

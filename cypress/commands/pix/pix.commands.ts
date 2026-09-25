@@ -1,3 +1,4 @@
+import menuElements from '@elements/menu.elements';
 import { pixElements } from '@elements/pix.elements';
 
 declare global {
@@ -23,7 +24,8 @@ declare global {
 }
 
 Cypress.Commands.add('visitPix', () => {
-  cy.visit('/contas/pix');
+  cy.get(menuElements.itemPix).click();
+  //cy.visit('/contas/pix');
 
   cy.contains(pixElements.cardTransferir).should('be.visible');
 });
